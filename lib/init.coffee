@@ -1,5 +1,15 @@
 { CompositeDisposable } = require 'atom'
 path = require 'path'
+isWindows = Boolean(process.platform.indexOf('win32') > -1)
+
+apioDir = () ->
+  return path.join(process.env.HOME || process.env.USERPROFILE, '.apio')
+
+packageDir = () ->
+  return path.join(apioDir(), 'packages', 'toolchain-iverilog')
+
+iverilog = () ->
+  return path.join(packageDir(), 'bin', 'iverilog')
 
 lint = (editor) ->
   helpers = require('atom-linter')
@@ -8,8 +18,9 @@ lint = (editor) ->
   dirname = path.dirname(file)
 
   args = ("#{arg}" for arg in atom.config.get('apio-linter-verilog.extraOptions'))
+  if !isWindows then args = args.concat ['-B', path.join(packageDir(), 'lib', 'ivl')]
   args = args.concat ['-t', 'null', '-I', dirname,  file]
-  helpers.exec('iverilog', args, {stream: 'both'}).then (output) ->
+  helpers.exec(iverilog(), args, {stream: 'both'}).then (output) ->
     lines = output.stderr.split("\n")
     messages = []
     for line in lines
